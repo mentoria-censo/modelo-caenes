@@ -15,6 +15,7 @@ df = 'data/input/brutas/caenes_pre_censo.xlsx' %>% read_excel %>% clean_names %>
   rename(oficio = titulo_ocupacion,
          tareas = tareasdeberes) %>%  procesar_texto_dataframe(c(oficio, tareas, act_principal))
 
+<<<<<<< HEAD
 
 
 
@@ -23,9 +24,26 @@ maxlen_act_ppal = 25
 maxlen_oficio = 15
 maxlen_tareas = 25
 source('script/etl/modelamiento/helpers_training.R')
+=======
+maxlens = list()
+network_inputs = list()
+vocab_sizes = list()
+tokenizers = list()
+embedding_matrices = list()
+#df %>% select(matches('(oficio|tareas|act_principal)$'), codigo_final) %>% view
 
-act_ppal_network_inputs <- pre_process(df, text_variable =  "act_principal_proc",
+# 300.  Inputs ------------------------------------------------------------
+>>>>>>> d1c32284e5dcc49d4f7d121ebfcebbd7a2483f4b
+
+
+maxlens$act_ppal = 25
+maxlens$oficio = 15
+maxlens$tareas = 25
+
+
+network_inputs$act_ppal <- pre_process(df, text_variable =  "act_principal_proc",
                                        label =  codigo_final, type = "sequences",
+<<<<<<< HEAD
                                        maxlen = maxlen_act_ppal)
 tareas_network_inputs <- pre_process(df, text_variable =  "tareas_proc",
                                      label =  codigo_final, type = "sequences",
@@ -34,13 +52,23 @@ oficio_network_inputs <- pre_process(df, text_variable =  "oficio_proc", label =
                                      maxlen = maxlen_oficio)
 # oficio_network_inputs$x_train %>% dim
 # tareas_network_inputs$x_train %>% dim
+=======
+                                       maxlen = maxlens$act_ppal)
+network_inputs$oficio <- pre_process(df, text_variable =  "oficio_proc", label =  codigo_final, type = "sequences",
+                                     maxlen = maxlens$oficio)
+network_inputs$tareas <- pre_process(df, text_variable =  "tareas_proc", label =  codigo_final, type = "sequences",
+                                     maxlen = maxlens$tareas)
+
+
+>>>>>>> d1c32284e5dcc49d4f7d121ebfcebbd7a2483f4b
 
 # 400.  Modelo ------------------------------------------------------------
 # 410.  Parámetros de la red ----------------------------------------------
-act_ppal_vocab_size = length(act_ppal_network_inputs$tokenizer$word_index) + 1
 
-oficio_vocab_size = length(oficio_network_inputs$tokenizer$word_index) + 1
-tareas_vocab_size = length(tareas_network_inputs$tokenizer$word_index) + 1
+vocab_sizes$act_ppal = length(network_inputs$act_ppal$tokenizer$word_index) + 1
+
+vocab_sizes$oficio = length(network_inputs$oficio$tokenizer$word_index) + 1
+vocab_sizes$tareas = length(network_inputs$tareas$tokenizer$word_index) + 1
 
 
 clases = length(unique(df$codigo_final))
@@ -53,38 +81,31 @@ if(!exists('modelo_embeddings')){
 }
 
 # Crear los embeddings a partir del modelo gensim.
-act_ppal_tokenizer <- act_ppal_network_inputs$tokenizer
-oficio_tokenizer <- oficio_network_inputs$tokenizer
-tareas_tokenizer <- tareas_network_inputs$tokenizer
 embedding_dim = 300
-###AQUI-> tuve que cambiar la función, también dupliqué el archivo
-reticulate::source_python("script/etl/modelamiento/create_embeddings_doble_entrada.py")
 
-oficio_embedding_matrix = crear_matriz_embeddings(vocab_size = oficio_vocab_size,
-                                                  dimensiones_modelo = embedding_dim,
-                                                  tokenizer = oficio_tokenizer,
-                                                  modelo_embeddings = modelo_embeddings)
 
-tareas_embedding_matrix = crear_matriz_embeddings(vocab_size = tareas_vocab_size,
-                                                  dimensiones_modelo = embedding_dim,
-                                                  tokenizer = tareas_tokenizer,
-                                                  modelo_embeddings = modelo_embeddings)
+reticulate::source_python("script/etl/modelamiento/create_embeddings.py")
 
-act_ppal_embedding_matrix = crear_matriz_embeddings(vocab_size = act_ppal_vocab_size,
-                                                  dimensiones_modelo = embedding_dim,
-                                                  tokenizer = act_ppal_tokenizer,
-                                                  modelo_embeddings = modelo_embeddings)
+
+
+
+for(var in c('act_ppal', 'oficio', 'tarea')){
+  embedding_matrices[var] = crear_matriz_embeddings(vocab_size = vocab_sizes[var],
+                                                    dimensiones_modelo = embedding_dim,
+                                                    tokenizer = network_inputs[var]$tokenizer,
+                                                    modelo_embeddings = modelo_embeddings)
+}
 
 
 
 # 430. Arquitectura de la red ---------------------------------------------
-oficio_input = layer_input(shape = list(maxlen_oficio), name = "oficio_input")
-tareas_input = layer_input(shape = list(maxlen_tareas), name = "tareas_input")
-act_ppal_input = layer_input(shape = list(maxlen_act_ppal), name = "act_ppal_input")
+oficio_input = layer_input(shape = list(maxlens$oficio), name = "oficio_input")
+tareas_input = layer_input(shape = list(maxlens$tareas), name = "tareas_input")
+act_ppal_input = layer_input(shape = list(maxlens$act_ppal), name = "act_ppal_input")
 
 oficio_model = oficio_input %>%
-  layer_embedding(input_dim = oficio_vocab_size, output_dim = embedding_dim, input_length = maxlen_oficio,
-                  weights = list(oficio_embedding_matrix), trainable = FALSE) %>%
+  layer_embedding(input_dim = vocab_sizes$oficio, output_dim = embedding_dim, input_length = maxlens$oficio,
+                  weights = list(embedding_matrices$oficio), trainable = FALSE) %>%
   layer_spatial_dropout_1d(rate = 0.2 ) %>%
   layer_gru(units = 150, return_sequences = TRUE, trainable = T)
 
@@ -92,8 +113,8 @@ oficio_max_pool = oficio_model %>% layer_global_max_pooling_1d(trainable = T)
 oficio_ave_pool = oficio_model %>% layer_global_average_pooling_1d(trainable = T)
 
 tareas_model = tareas_input %>%
-  layer_embedding(input_dim = tareas_vocab_size, output_dim = embedding_dim, input_length = maxlen_tareas,
-                  weights = list(tareas_embedding_matrix), trainable = FALSE) %>%
+  layer_embedding(input_dim = vocab_sizes$tareas, output_dim = embedding_dim, input_length = maxlens$tareas,
+                  weights = list(embedding_matrices$tarea), trainable = FALSE) %>%
   layer_spatial_dropout_1d(rate = 0.2 ) %>%
   layer_gru(units = 150, return_sequences = TRUE, trainable = T)
 
@@ -101,8 +122,8 @@ tareas_max_pool = tareas_model %>% layer_global_max_pooling_1d(trainable = T)
 tareas_ave_pool = tareas_model %>% layer_global_average_pooling_1d(trainable = T)
 
 act_ppal_model = act_ppal_input %>%
-  layer_embedding(input_dim = act_ppal_vocab_size, output_dim = embedding_dim, input_length = maxlen_act_ppal,
-                  weights = list(act_ppal_embedding_matrix), trainable = FALSE) %>%
+  layer_embedding(input_dim = vocab_sizes$act_ppal, output_dim = embedding_dim, input_length = maxlens$act_ppal,
+                  weights = list(embedding_matrices$act_ppal), trainable = FALSE) %>%
   layer_spatial_dropout_1d(rate = 0.2, trainable = T ) %>%
   layer_gru(units = 150, return_sequences = TRUE, trainable = T)
 
@@ -138,19 +159,19 @@ cbs= list(callback_early_stopping(verbose = T, patience=15, monitor='val_loss'),
                                     save_best_only = T, verbose = T))
 tf$random$set_seed(104)
 history <- model %>%
-  fit(list(act_ppal_network_inputs$x_train %>% data.matrix, oficio_network_inputs$x_train %>% data.matrix, tareas_network_inputs$x_train %>% data.matrix),
-      act_ppal_network_inputs$y_train,
+  fit(list(network_inputs$act_ppal$x_train %>% data.matrix, network_inputs$oficio$x_train %>% data.matrix, network_inputs$tareas$x_train %>% data.matrix),
+      network_inputs$act_ppal$y_train,
       epochs = 100,
-      validation_data = list(list(act_ppal_network_inputs$x_test, oficio_network_inputs$x_test, tareas_network_inputs$x_test),
-                             act_ppal_network_inputs$y_test),
+      validation_data = list(list(network_inputs$act_ppal$x_test, network_inputs$oficio$x_test, network_inputs$tareas$x_test),
+                             network_inputs$act_ppal$y_test),
       batch_size = 256,
       verbose = TRUE, callbacks = cbs)
 
 # history <- model %>%
-#   fit(list(act_ppal_network_inputs$x_train %>% data.matrix),
-#       act_ppal_network_inputs$y_train,
+#   fit(list(network_inputs$act_ppal$x_train %>% data.matrix),
+#       network_inputs$act_ppal$y_train,
 #       epochs = 100,
-#       validation_data = list(act_ppal_network_inputs$x_test, act_ppal_network_inputs$y_test),
+#       validation_data = list(network_inputs$act_ppal$x_test, network_inputs$act_ppal$y_test),
 #       batch_size = 256,
 #       verbose = TRUE, callbacks = cbs)
 
@@ -159,15 +180,15 @@ history <- model %>%
 # Evaluación modelo -------------------------------------------------------
 
 modelo = load_model_hdf5('data/output/modelo/mejor_modelo_doble_entrada.h5')
-keys = act_ppal_network_inputs$keys
+keys = network_inputs$act_ppal$keys
 
-x_test_act_ppal = texts_to_sequences(act_ppal_tokenizer, act_ppal_network_inputs$df_test$act_principal) %>%
-  pad_sequences(padding='post', maxlen=maxlen_act_ppal)
+x_test_act_ppal = texts_to_sequences(network_inputs$act_ppal$tokenizer, network_inputs$act_ppal$df_test$act_principal) %>%
+  pad_sequences(padding='post', maxlen=maxlens$act_ppal)
 
-x_test_oficio = texts_to_sequences(oficio_tokenizer, act_ppal_network_inputs$df_test[['oficio_proc']]) %>%
-  pad_sequences(padding='post', maxlen=maxlen_oficio)
-x_test_tareas = texts_to_sequences(tareas_tokenizer, act_ppal_network_inputs$df_test[['tareas_proc']]) %>%
-  pad_sequences(padding='post', maxlen=maxlen_tareas)
+x_test_oficio = texts_to_sequences(network_inputs$oficio$tokenizer, network_inputs$act_ppal$df_test[['oficio_proc']]) %>%
+  pad_sequences(padding='post', maxlen=maxlens$oficio)
+x_test_tareas = texts_to_sequences(network_inputs$tareas$tokenizer, network_inputs$act_ppal$df_test[['tareas_proc']]) %>%
+  pad_sequences(padding='post', maxlen=maxlens$tareas)
 
 y_proba = modelo$predict(list(x_test_act_ppal, x_test_oficio, x_test_tareas))
 
@@ -185,9 +206,9 @@ pbb_mas_alta = apply(y_proba, 1, function(z) {
 y_pred_vector = y_proba %>% Rfast::rowMaxs() - 1
 
 y_pred = y_pred_vector %>% matrix(ncol=1) %>% data.frame %>% setNames('codigo_int')
-act_ppal_network_inputs$df_test$codigo_final
+network_inputs$act_ppal$df_test$codigo_final
 
-y_pred_glosas = y_pred %>% left_join(keys) %>% bind_cols(y_test = act_ppal_network_inputs$y_test ) %>%
+y_pred_glosas = y_pred %>% left_join(keys) %>% bind_cols(y_test = network_inputs$act_ppal$y_test ) %>%
   mutate(predice = int(y_pred == y_test),
          dificultad = proxy_dificultad,
          pbb_caso = pbb_mas_alta)
