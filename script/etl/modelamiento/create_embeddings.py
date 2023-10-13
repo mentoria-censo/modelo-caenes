@@ -7,11 +7,12 @@ def crear_matriz_embeddings(vocab_size, dimensiones_modelo, tokenizer, modelo_em
   # Sacar el tamaño del vocabulario, usando 
 
   vocab_size =   int(vocab_size)
-  print(dimensiones_modelo)
+
   # Crear matriz con ceros
   embedding_matrix = zeros((vocab_size, int(dimensiones_modelo)))
 
   # Para cada palabra dentro de mi vocabulario
+  contar = 0
   for word, i in tokenizer.word_index.items():
 
     # Si el modelo predice algo para la palabra
@@ -22,16 +23,16 @@ def crear_matriz_embeddings(vocab_size, dimensiones_modelo, tokenizer, modelo_em
       # print('vector: ', embedding_vector.shape)
       # print('matriz: ', embedding_matrix.shape)
       embedding_matrix[i] = embedding_vector
+      
+      contar = contar + 1 
 
       
       
   #x = np.sum(embedding_matrix, axis = 1)
-  contar = 0
+  
 
-  for w, i in tokenizer.word_index.items():
-    if w in modelo_embeddings.wv:
-      contar = contar + 1 
-    
+      
+  print(contar)  
   return embedding_matrix
   # Construir minimos y máximos para cada texto
 

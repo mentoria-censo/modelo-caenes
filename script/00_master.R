@@ -18,6 +18,7 @@
 # 000. Librerías  ---------------------------------------------------------
 
 reticulate::use_condaenv('caenes', required = T)
+
 # keras::install_keras(method = 'conda')
 if(!require(Rfast)) install.packages("Rfast") else require(Rfast)
 if(!require(readxl)) install.packages("readxl") else require(readxl)
@@ -59,17 +60,13 @@ source("script/etl/modelamiento/helpers_training.R", encoding = "utf-8")
 
 # 002. Modelamiento -------------------------------------------------------
 
-source('script/1b_modelamiento_doble_entrada.R')
+source('script/1a_modelamiento.R')
 
 
-# # 003. Evaluacion del modelo ----------------------------------------------
-# source('script/2_metricas_de_clasificacion.R')
-# source('script/3_analisis_predicciones_ciuo.R') #A esta no quise ordenarla porque no estaba tan segura
 
+# 004. Prediccion datos nuevos (Obsoleto)
 
-# 004. Prediccion datos IX EPF --------------------------------------------
-
-source('script/4b_prediccion_datos_nuevos_doble_entrada.R')
+#source('script/4b_prediccion_datos_nuevos_doble_entrada.R')
 
 
 
