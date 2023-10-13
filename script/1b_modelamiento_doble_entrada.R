@@ -15,21 +15,23 @@ df = 'data/input/brutas/caenes_pre_censo.xlsx' %>% read_excel %>% clean_names %>
   rename(oficio = titulo_ocupacion,
          tareas = tareasdeberes) %>%  procesar_texto_dataframe(c(oficio, tareas, act_principal))
 
-df %>% select(matches('oficio|tareas|act_principal'), codigo_final) %>% view
+
+
 
 # 300.  Inputs ------------------------------------------------------------
 maxlen_act_ppal = 25
 maxlen_oficio = 15
 maxlen_tareas = 25
+source('script/etl/modelamiento/helpers_training.R')
 
 act_ppal_network_inputs <- pre_process(df, text_variable =  "act_principal_proc",
                                        label =  codigo_final, type = "sequences",
                                        maxlen = maxlen_act_ppal)
-tareas_network_inputs <- pre_process(df, text_variable =  "tareas_proc", label =  codigo_final, type = "sequences",
+tareas_network_inputs <- pre_process(df, text_variable =  "tareas_proc",
+                                     label =  codigo_final, type = "sequences",
                              maxlen = maxlen_tareas)
 oficio_network_inputs <- pre_process(df, text_variable =  "oficio_proc", label =  codigo_final, type = "sequences",
                                      maxlen = maxlen_oficio)
-
 # oficio_network_inputs$x_train %>% dim
 # tareas_network_inputs$x_train %>% dim
 
