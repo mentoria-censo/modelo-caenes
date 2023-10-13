@@ -18,3 +18,4 @@ def get_modelo(tipo_modelo):
     return wordvectors2
 
 
+

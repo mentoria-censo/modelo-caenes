@@ -27,7 +27,7 @@ pre_process <- function(df, text_variable, label, maxlen, type = "sequences") {
 
 
   # Número de SB
-  sbgrupo = length(unique(df$codigo_int))
+  sbgrupo = length(unique(df$codigo_final))
 
   # Separar en train y test
   set.seed(1234)
@@ -48,6 +48,7 @@ pre_process <- function(df, text_variable, label, maxlen, type = "sequences") {
   # Tokenizar
   tokenizer <-  text_tokenizer( oov_token = "OOV")
   fit_text_tokenizer(tokenizer, x_train)
+
 
   #save_text_tokenizer(tokenizer, "data/finales/modelos/modelo_red_seq")
 
