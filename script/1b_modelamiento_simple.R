@@ -11,7 +11,12 @@
 
 # df = armar_df_modelamiento_completo(datos_a_utilizar = 'todo', sm_exec = sm_exec)
 df = 'data/input/brutas/caenes_pre_censo.xlsx' %>% read_excel %>% clean_names %>%
-  mutate(codigo_final = if_else(codigo_nomenclaturas == 0, seccion, codigo_nomenclaturas))
+  # Generamos código final en base a auditoría del modelo
+  mutate(codigo_final = if_else(codigo_nomenclaturas == 0, seccion, codigo_nomenclaturas)) %>%
+  rename(oficio = titulo_ocupacion,
+         tareas = tareasdeberes) %>%
+  # Procesamos texto
+  procesar_texto_dataframe(c(oficio, tareas, act_principal))
 
 
 # 300.  Inputs ------------------------------------------------------------
