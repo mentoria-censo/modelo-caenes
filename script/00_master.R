@@ -38,10 +38,6 @@ if(!require(mltest)) install.packages("mltest") else require(mltest)
 if(!require(feather)) install.packages("feather") else require(feather)
 if(!require(tm)) install.packages("tm") else require(tm)
 if(!require(janitor)) install.packages("janitor") else require(janitor)
-# if('antoniariveros' %in% list.files('/Users/')){
-#   Sys.setenv(RETICULATE_PYTHON = '/Users/antoniariveros/opt/anaconda3/envs/prueba_numero_8mil/bin/python')
-#
-# }
 if(!require(reticulate)) install.packages("reticulate") else require(reticulate)
 if(!require(writexl)) install.packages("writexl") else require(writexl)
 
