@@ -10,10 +10,15 @@ df = 'data/input/brutas/caenes_pre_censo.xlsx' %>% read_excel %>% clean_names %>
   procesar_texto_dataframe(c(oficio, tareas, act_principal))
 
 
+
+
 # Variables de texto que usaremos en la arquitectura
 variables_texto = list('act_principal', 'oficio', 'tareas')
 # Largo máximo de las secuencias de las glosas
-maxlens = c(25, 15, 25) %>% set_names(variables_texto)
+maxlens = c((df %>% pull(act_principal_proc)) %>% quanteda::tokens() %>% map(length) %>% unlist %>% max
+, (df %>% pull(oficio_proc)) %>% quanteda::tokens() %>% map(length) %>% unlist %>% max
+, (df %>% pull(tareas_proc)) %>% quanteda::tokens() %>% map(length) %>% unlist %>% max
+) %>% set_names(variables_texto)
 
 
 #  Inputs ------------------------------------------------------------
