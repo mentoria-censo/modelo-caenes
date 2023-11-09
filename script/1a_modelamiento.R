@@ -20,13 +20,14 @@ maxlens = c((df %>% pull(act_principal_proc)) %>% quanteda::tokens() %>% map(len
 , (df %>% pull(tareas_proc)) %>% quanteda::tokens() %>% map(length) %>% unlist %>% max
 ) %>% set_names(variables_texto)
 
-
 #  Inputs ------------------------------------------------------------
 
 # Network inputs para cada una de las variables. Incluye x_train, y_train, x_test, y_test, tokenizer, keys y df_test
-network_inputs = variables_texto %>% map(~pre_process(df, text_variable =  glue("{.x}_proc"),
-                                     label =  codigo_final, type = "sequences",
-                                     maxlen = maxlens[.x])) %>% set_names(variables_texto)
+network_inputs = variables_texto %>%
+  map(~pre_process(df, text_variable =  glue("{.x}_proc"),
+                   label =  codigo_final, type = "sequences",
+                   maxlen = maxlens[.x])) %>%
+  set_names(variables_texto)
 
 
 
@@ -53,13 +54,13 @@ embedding_dim = 300
 # Trae función crear_matriz_embeddings de python
 reticulate::source_python("script/etl/modelamiento/create_embeddings.py")
 
-network_inputs$act_principal$tokenizer$word_index
 
 # crea matriz de embeddings para cada variable de dimensión vocab_size x embedding_dim (300)
-embedding_matrices = variables_texto %>% map(~crear_matriz_embeddings(vocab_size = vocab_sizes[[.x]],
-                                                 dimensiones_modelo = embedding_dim,
-                                                 tokenizer = network_inputs[[.x]]$tokenizer,
-                                                 modelo_embeddings = modelo_embeddings)) %>%
+embedding_matrices = variables_texto %>%
+  map(~crear_matriz_embeddings(vocab_size = vocab_sizes[[.x]],
+                               dimensiones_modelo = embedding_dim,
+                               tokenizer = network_inputs[[.x]]$tokenizer,
+                               modelo_embeddings = modelo_embeddings)) %>%
   set_names(variables_texto)
 
 
@@ -80,9 +81,9 @@ build_model = function(inputs, var){
   - Entrega ambas capas de pooling'
   model = inputs[[var]] %>%
     layer_embedding(input_dim = vocab_sizes[[var]], output_dim = embedding_dim, input_length = maxlens[[var]],
-                    weights = list(embedding_matrices[[var]]), trainable = FALSE) %>%
+                    weights = list(embedding_matrices[[var]]), trainable = T) %>%
     layer_spatial_dropout_1d(rate = 0.2 ) %>%
-    layer_gru(units = 150, return_sequences = TRUE, trainable = T)
+    layer_gru(units = 64, return_sequences = TRUE, trainable = T)
 
   max_pool = model %>% layer_global_max_pooling_1d(trainable = T)
   ave_pool = model %>% layer_global_average_pooling_1d(trainable = T)
@@ -141,6 +142,16 @@ history <- model %>%
       verbose = TRUE, callbacks = cbs)
 
 # Evaluación modelo ----
+x_test_act_principal = texts_to_sequences(network_inputs$act_principal$tokenizer, network_inputs$act_principal$df_test$act_principal) %>%
+  pad_sequences(padding='post', maxlen=maxlens[['act_principal']])
+
+x_test_oficio = texts_to_sequences(network_inputs$oficio$tokenizer, network_inputs$act_principal$df_test[['oficio_proc']]) %>%
+  pad_sequences(padding='post', maxlen=maxlens[['oficio']])
+x_test_tareas = texts_to_sequences(network_inputs$tareas$tokenizer, network_inputs$act_principal$df_test[['tareas_proc']]) %>%
+  pad_sequences(padding='post', maxlen=maxlens[['tareas']])
+
+
+
 model %>% evaluate(list(x_test_act_principal, x_test_oficio, x_test_tareas),
                    network_inputs$act_principal$y_test, verbose = 2)
 
@@ -164,13 +175,6 @@ keys = network_inputs$act_principal$keys
 # Análisis resultados -----------------------------------------------------
 
 
-x_test_act_principal = texts_to_sequences(network_inputs$act_principal$tokenizer, network_inputs$act_principal$df_test$act_principal) %>%
-  pad_sequences(padding='post', maxlen=maxlens[['act_principal']])
-
-x_test_oficio = texts_to_sequences(network_inputs$oficio$tokenizer, network_inputs$act_principal$df_test[['oficio_proc']]) %>%
-  pad_sequences(padding='post', maxlen=maxlens[['oficio']])
-x_test_tareas = texts_to_sequences(network_inputs$tareas$tokenizer, network_inputs$act_principal$df_test[['tareas_proc']]) %>%
-  pad_sequences(padding='post', maxlen=maxlens[['tareas']])
 
 y_proba = modelo$predict(list(x_test_act_principal, x_test_oficio, x_test_tareas))
 
