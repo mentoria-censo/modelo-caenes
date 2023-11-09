@@ -66,7 +66,6 @@ embedding_matrices = variables_texto %>%
 inputs = variables_texto %>% map(~layer_input(shape = list(maxlens[[.x]]), name = glue("{.x}_input"))) %>%
   set_names(variables_texto)
 
-
 build_model = function(inputs, var){
   'Función build model arma la arquitectura general de la red:
   - Parte de la capa de input
@@ -78,7 +77,7 @@ build_model = function(inputs, var){
     layer_embedding(input_dim = vocab_sizes[[var]], output_dim = embedding_dim, input_length = maxlens[[var]],
                     weights = list(embedding_matrices[[var]]), trainable = T) %>%
     layer_spatial_dropout_1d(rate = 0.2 ) %>%
-    layer_gru(units = 64, return_sequences = TRUE, trainable = T)
+    layer_gru(units = 128, return_sequences = T, trainable = T)
 
   max_pool = model %>% layer_global_max_pooling_1d(trainable = T)
   ave_pool = model %>% layer_global_average_pooling_1d(trainable = T)
