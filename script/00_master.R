@@ -17,9 +17,25 @@
 
 # 000. Librerías  ---------------------------------------------------------
 
-reticulate::use_condaenv('caenes', required = T)
+instalar_ambiente = function(){
 
+  pak::pak("rstudio/reticulate")
+  tensorflow::install_tensorflow()
+  reticulate::virtualenv_install('r-tensorflow', packages = 'gensim')
+
+
+}
+
+# remotes::install_github("rstudio/tensorflow")
+# reticulate::import('asyncio')
+# reticulate::source_python('C:/Users/Jeconchao/Documents/.virtualenvs/r-tensorflow/Lib/site-packages/asyncio/__init__.py')
+# reticulate::conda_create('r-tensorflow', packages = c('tensorflow', 'gensim'))
+# reticulate::install_miniconda()
+# tensorflow::install_tensorflow()
+# keras::install_keras()
 # keras::install_keras(method = 'conda')
+
+reticulate::use_virtualenv('r-tensorflow', required = T)
 if(!require(Rfast)) install.packages("Rfast") else require(Rfast)
 if(!require(readxl)) install.packages("readxl") else require(readxl)
 if(!require(dplyr)) install.packages("dplyr") else require(dplyr)
