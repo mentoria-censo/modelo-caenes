@@ -193,7 +193,8 @@ y_pred_vector = y_proba %>% Rfast::rowMaxs() - 1
 y_pred = y_pred_vector %>% matrix(ncol=1) %>% data.frame %>% setNames('codigo_int')
 network_inputs$act_principal$df_test$codigo_final
 
-y_pred_glosas = y_pred %>% left_join(keys) %>% bind_cols(y_test = network_inputs$act_principal$y_test ) %>%
+y_pred_glosas = y_pred %>% left_join(keys) %>% bind_cols(y_test = network_inputs$act_principal$y_test,
+                                                         act_ppal = network_inputs$act_principal$df_test$act_principal) %>%
   mutate(predice = int(y_pred == y_test),
          dificultad = proxy_dificultad,
          pbb_caso = pbb_mas_alta)
@@ -202,6 +203,14 @@ y_pred_glosas %>% summarise(media_accuracy = mean(predice))
 y_pred_glosas %>% group_by(codigo_final) %>% summarise(media_accuracy = mean(predice),
                                                        n_casos = n()) %>%
   arrange(-n_casos) %>% writexl::write_xlsx('data/output/summary_data/resumen_modelo_simple.xlsx')
+
+y_pred_glosas %>% writexl::write_xlsx('data/output/summary_data/resultados_modelo_simple.xlsx')
+
+y_pred_glosas %>% filter(y_test == 0) %>% view
+y_pred_glosas %>% filter(pbb_caso <.2) %>% view
+y_pred_glosas %>% filter(predice == 0) %>% group_by(y_test) %>% summarise(mean_pbb = mean(pbb_caso),
+                                                 n_casos = n()) %>% filter(n_casos > 5) %>% view
+
 
 # model %>% save_model_hdf5('data/output/modelo/modelo_ciuo_ix_epf_doble_entrada.hdf5')
 
